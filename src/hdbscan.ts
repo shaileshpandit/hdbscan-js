@@ -1,3 +1,4 @@
+import { condenseTree } from "./clusterTree";
 import kdTreePrim from "./kdTreePrim";
 import { euclidean } from "./metrics";
 import { MetricFunction } from "./types";
@@ -25,7 +26,12 @@ export class Hdbscan {
         this.alpha = alpha;
         this.metric = metric;
         
-        kdTreePrim(input, minSamples, alpha, metric);
+        // Build the cluster hierarchy using kdTree and Prim
+        const singleLinkage = kdTreePrim(this.input, this.minSamples, this.alpha, this.metric);
+
+        // Condense the cluster tree
+        const condensedTree = condenseTree(singleLinkage, this.minClusterSize);
+        console.log('condensedTree: ', condensedTree);
 
         this.clusters = [];
         this.noise = [];

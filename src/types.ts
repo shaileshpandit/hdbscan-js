@@ -24,3 +24,5 @@ export type MSTAlgorithm = (
     alpha: number,
     metric: MetricFunction
 ) => SingleLinkage;
+
+export type StabilityDict = Map<number,number>;

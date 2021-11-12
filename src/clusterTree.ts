@@ -1,4 +1,4 @@
-import { HierarchyNode, SingleLinkage } from "./types";
+import { HierarchyNode, SingleLinkage, StabilityDict } from "./types";
 
 export function bfsFromHierarchy(
     hierarchy: SingleLinkage,
@@ -184,4 +184,98 @@ export function computeStabilities(
     // console.log('resultDict: ', resultDict);
 
     return resultDict;
+}
+
+export function bfsFromClusterTree(tree: SingleLinkage, bfsRoot: number) {
+    var toProcess = [bfsRoot];
+    let result: Array<number> = [];
+
+    while (toProcess.length) {
+        result = result.concat(toProcess);
+        toProcess = tree
+            .filter(t => toProcess.indexOf(t.parent) !== -1)
+            .map(t => t.child);
+    }
+
+    return result;
+}
+
+export function getClusterNodes(
+    condensedTree: SingleLinkage,
+    stability: StabilityDict,
+    clusterSelectionMethod = "eom",
+    allowSingleCluster = false,
+    clusterSelectionEpsilon = 0.0,
+    maxClusterSize = 0) {
+    
+    if (clusterSelectionMethod !== "eom") {
+        throw Error('Only eom method is supported now.');
+    }
+    if(clusterSelectionEpsilon !== 0.0) {
+        throw Error('epsilon selection is not supported now.');
+    }
+    if(allowSingleCluster) {
+        throw Error('singleCluster is not supported now.');
+    }
+
+    var nodeList: Array<number>;
+    if (allowSingleCluster) {
+        nodeList = [...stability.keys()].sort((a, b) => b - a);
+    } else {
+        nodeList = [...stability.keys()].sort((a, b) => b - a).slice(0, stability.size - 1);
+    }
+
+    const clusterTree = condensedTree.filter(t => t.size > 1);
+    const isCluster = new Map<number, boolean>();
+    nodeList.forEach(n => isCluster.set(n, true));
+    const nonClusterChilds = condensedTree
+        .filter(t => t.size === 1)
+        .map(t => t.child);
+    const numPoints = Math.max(...nonClusterChilds) + 1;
+    const maxLambda = Math.max(...condensedTree.map(t => t.lambda));
+
+    if (maxClusterSize <= 0) {
+        maxClusterSize = numPoints + 1
+    }
+
+    const clusterSizes = new Map<number, number>();
+    clusterTree.forEach(t => clusterSizes.set(t.child, t.size));
+
+    console.log('getClusters: ', isCluster, numPoints, maxLambda, clusterSizes);
+    console.log('nodeList: ', nodeList);
+    console.log('clusterTree: ', clusterTree);
+    
+    // return getClustersUsingEOM(nodeList, clusterTree, stability, isCluster, clusterSizes);
+    for (const node of nodeList) {
+        const childSelection = clusterTree
+            .filter(c => c.parent === node)
+            .map(c => c.child);
+        console.log('childSelection: ', node, childSelection);
+        const subtreeStability = childSelection
+            .map(cs => stability.get(cs) || 0)
+            .reduce((r, n) => r + n, 0);
+        console.log('subtreeStability: ', node, subtreeStability, stability.get(node), clusterSizes.get(node), maxClusterSize);
+        if (subtreeStability > (stability.get(node) || 0) || (clusterSizes.get(node) || 0) > maxClusterSize) {
+            isCluster.set(node, false);
+            stability.set(node, subtreeStability);
+        } else {
+            for (const subNode of bfsFromClusterTree(clusterTree, node)) {
+                if (subNode !== node) {
+                    isCluster.set(subNode, false);
+                }
+            }
+        }
+    }
+
+    console.log('isCluster: ', isCluster, stability);
+
+    const clusterNodes = [...isCluster.entries()].filter(e => e[1]).map(e => e[0]).sort();
+    const clusterNodesMap = new Map<number, number>();
+    const revClusterNodesMap = new Map<number, number>();
+    for (var i = 0; i < clusterNodes.length; i++) {
+        clusterNodesMap.set(clusterNodes[i], i);
+        revClusterNodesMap.set(i, clusterNodes[i]);
+    }
+
+    return { clusterNodes, clusterNodesMap, revClusterNodesMap };
 }

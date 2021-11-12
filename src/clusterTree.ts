@@ -1,4 +1,5 @@
 import { HierarchyNode, SingleLinkage, StabilityDict } from "./types";
+import { TreeUnionFind } from "./unionFind";
 
 export function bfsFromHierarchy(
     hierarchy: SingleLinkage,
@@ -207,14 +208,14 @@ export function getClusterNodes(
     allowSingleCluster = false,
     clusterSelectionEpsilon = 0.0,
     maxClusterSize = 0) {
-    
+
     if (clusterSelectionMethod !== "eom") {
         throw Error('Only eom method is supported now.');
     }
-    if(clusterSelectionEpsilon !== 0.0) {
+    if (clusterSelectionEpsilon !== 0.0) {
         throw Error('epsilon selection is not supported now.');
     }
-    if(allowSingleCluster) {
+    if (allowSingleCluster) {
         throw Error('singleCluster is not supported now.');
     }
 
@@ -244,7 +245,7 @@ export function getClusterNodes(
     console.log('getClusters: ', isCluster, numPoints, maxLambda, clusterSizes);
     console.log('nodeList: ', nodeList);
     console.log('clusterTree: ', clusterTree);
-    
+
     // return getClustersUsingEOM(nodeList, clusterTree, stability, isCluster, clusterSizes);
     for (const node of nodeList) {
         const childSelection = clusterTree
@@ -278,4 +279,90 @@ export function getClusterNodes(
     }
 
     return { clusterNodes, clusterNodesMap, revClusterNodesMap };
+}
+
+export function labelClusters(
+    condensedTree: SingleLinkage,
+    clusterNodes: number[],
+    clusterLabelMap: Map<number, number>,
+    allowSingleCluster: boolean = false,
+    clusterSelectionEpsilon: number = 0.0,
+    matchReferenceImplementation: boolean = false) {
+
+    if (clusterSelectionEpsilon !== 0.0) {
+        throw Error('epsilon selection is not supported now.');
+    }
+    if (allowSingleCluster) {
+        throw Error('singleCluster is not supported now.');
+    }
+    if (matchReferenceImplementation) {
+        throw Error('matchReferenceImplementation is not supported now.');
+    }
+
+    const parentArray = condensedTree.map(c => c.parent);
+    const childArray = condensedTree.map(c => c.child);
+
+    const rootCluster = Math.min(...parentArray);
+    const result = new Array(rootCluster);
+
+    const maxParent = Math.max(...parentArray);
+    const unionFind = new TreeUnionFind(maxParent + 1);
+
+    console.log('rootCluster: ', rootCluster);
+
+    for (var n = 0; n < condensedTree.length; n++) {
+        const child = childArray[n]
+        const parent = parentArray[n];
+        if (clusterNodes.indexOf(child) === -1) {
+            unionFind.union(parent, child);
+        }
+    }
+
+    console.log('unionFind: ', unionFind.components());
+
+    for (var n = 0; n < rootCluster; n++) {
+        const cluster = unionFind.find(n);
+        if (cluster < rootCluster) {
+            result[n] = -1
+        } else if (cluster === rootCluster) {
+            if (clusterNodes.length === 1 && allowSingleCluster) {
+                const childMatch = condensedTree.find(t => t.child === n);
+                if (clusterSelectionEpsilon !== 0.0) {
+                    if (childMatch && childMatch.lambda >= 1 / clusterSelectionEpsilon) {
+                        result[n] = clusterLabelMap.get(cluster);
+                    } else {
+                        result[n] = -1
+                    }
+                } else {
+                    const parentMatches = condensedTree
+                        .filter(t => t.child === cluster)
+                        .map(t => t.lambda);
+                    if (childMatch && parentMatches &&
+                        childMatch.lambda >= Math.max(...parentMatches)) {
+                        result[n] = clusterLabelMap.get(cluster);
+                    } else {
+                        result[n] = -1
+                    }
+                }
+            } else {
+                result[n] = -1
+            }
+        } else {
+            if (matchReferenceImplementation) {
+                const childNMatch = condensedTree.find(t => t.child === n);
+                const point_lambda = childNMatch && childNMatch.lambda;
+                const childClusterMatch = condensedTree.find(t => t.child === cluster);
+                const cluster_lambda = childClusterMatch && childClusterMatch.lambda;
+                if (point_lambda && cluster_lambda && point_lambda > cluster_lambda) {
+                    result[n] = clusterLabelMap.get(cluster);
+                } else {
+                    result[n] = -1
+                }
+            } else {
+                result[n] = clusterLabelMap.get(cluster);
+            }
+        }
+    }
+
+    return result;
 }

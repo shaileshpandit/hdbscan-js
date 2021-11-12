@@ -1,4 +1,4 @@
-import { computeStabilities, condenseTree, getClusterNodes } from "./clusterTree";
+import { computeStabilities, condenseTree, getClusterNodes, labelClusters } from "./clusterTree";
 import kdTreePrim from "./kdTreePrim";
 import { euclidean } from "./metrics";
 import { MetricFunction } from "./types";
@@ -40,6 +40,10 @@ export class Hdbscan {
         // Extract the clusters
         const { clusterNodes, clusterNodesMap, revClusterNodesMap } = getClusterNodes(condensedTree, stabilityDict);
         console.log('clusterNodes: ', clusterNodes, 'clusterNodesMap: ', clusterNodesMap, 'revClusterNodesMap: ', revClusterNodesMap);
+
+        // Label the inputs
+        const labeledInputs = labelClusters(condensedTree, clusterNodes, clusterNodesMap);
+        console.log('labeledInputs: ', labeledInputs);
 
         this.clusters = [];
         this.noise = [];

@@ -1,6 +1,6 @@
 import { MetricFunction, HierarchyNode, MST } from "./types";
 
-export function primMst(
+export function buildMstUsingPrim(
     input: Array<Array<number>>,
     alpha: number,
     metric: MetricFunction,
@@ -33,9 +33,9 @@ export function primMst(
                 leftValue /= alpha;
             }
 
-            const core_value = coreDistances[j]
+            const coreValue = coreDistances[j]
             if (currentNodeCoreDistance > rightValue ||
-                core_value > rightValue ||
+                coreValue > rightValue ||
                 leftValue > rightValue) {
 
                 if (rightValue < newDistance) {
@@ -45,9 +45,9 @@ export function primMst(
                 continue;
             }
 
-            if (core_value > currentNodeCoreDistance) {
-                if (core_value > leftValue) {
-                    leftValue = core_value
+            if (coreValue > currentNodeCoreDistance) {
+                if (coreValue > leftValue) {
+                    leftValue = coreValue
                 }
             } else if (currentNodeCoreDistance > leftValue) {
                 leftValue = currentNodeCoreDistance

@@ -16,9 +16,11 @@ export class HierarchyNode {
 
 export type MST = Array<HierarchyNode>;
 
+export type SingleLinkage = Array<HierarchyNode>;
+
 export type MSTAlgorithm = (
     input: Array<Array<number>>,
     minSamples: number,
     alpha: number,
     metric: MetricFunction
-) => MST;
+) => SingleLinkage;

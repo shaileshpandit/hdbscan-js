@@ -9,7 +9,7 @@
   "jsdelivr": "dist/hdbscan.min.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "build": "rimraf dist && tsc",
     "build-npm": "yarn build && rollup -c"
   },
@@ -24,10 +24,15 @@
   ],
   "author": "Shailesh Pandit <shailesh.pandit@gmail.com>",
   "license": "GPL-3.0-or-later",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
+    "@babel/core": "^7.16.0",
+    "@babel/preset-env": "^7.16.0",
+    "@babel/preset-typescript": "^7.16.0",
     "@tsconfig/recommended": "^1.0.1",
+    "@types/jest": "^27.0.2",
+    "babel-jest": "^27.3.1",
+    "jest": "^27.3.1",
     "rimraf": "^3.0.2",
     "rollup": "^2.59.0",
     "rollup-plugin-node-resolve": "^5.2.0",

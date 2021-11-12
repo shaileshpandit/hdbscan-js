@@ -1204,6 +1204,11 @@
     jest-diff "^27.0.0"
     pretty-format "^27.0.0"
 
+"@types/kd-tree-javascript@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@types/kd-tree-javascript/-/kd-tree-javascript-1.0.0.tgz#73f0cd80f3d2a80447824f0daab438e8cb1c9a08"
+  integrity sha512-7snt6oWp4Szn9OzqghYMK7khSZFBMBS282GaC3n7bzwTiyVDkT8SnZdq916P9yp4ukyB/5yboF8bhtRVyS91jg==
+
 "@types/node@*":
   version "16.11.7"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.11.7.tgz#36820945061326978c42a01e56b61cd223dfdc42"
@@ -2594,6 +2599,11 @@ jsonfile@^4.0.0:
   integrity sha1-h3Gq4HmbZAdrdmQPygWPnBDjPss=
   optionalDependencies:
     graceful-fs "^4.1.6"
+
+kd-tree-javascript@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/kd-tree-javascript/-/kd-tree-javascript-1.0.3.tgz#ab5239ed44e347e10065590fd479e947bedff96c"
+  integrity sha512-7oSugmaxTCJFqey11rlTSEQD3hGDnRgROMj9MEREvDGV8SlIFwN7x3jJRyFoi+mjO0+4wuSuaDLS1reNQHP7uA==
 
 kleur@^3.0.3:
   version "3.0.3"

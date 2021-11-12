@@ -15,10 +15,12 @@ function config({ plugins = [], output = {} }) {
     ],
     output: {
       globals: {
+        'kd-tree-javascript': 'kdTreeJS'
       },
       ...output,
     },
     external: [
+      'kd-tree-javascript'
     ]
   };
 }

@@ -8,6 +8,10 @@
   "unpkg": "dist/hdbscan.min.js",
   "jsdelivr": "dist/hdbscan.min.js",
   "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shaileshpandit/hdbscan-js.git"
+  },
   "scripts": {
     "test": "jest",
     "build": "rimraf dist && tsc",

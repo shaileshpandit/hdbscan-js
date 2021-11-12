@@ -1,4 +1,4 @@
-import { kdTree } from "kd-tree-javascript";
+import kdTreePrim from "./kdTreePrim";
 import { euclidean } from "./metrics";
 import { MetricFunction } from "./types";
 
@@ -8,9 +8,6 @@ export class Hdbscan {
     private minSamples: number;
     private alpha: number;
     private metric: MetricFunction;
-
-    private kdTree: kdTree<number[]>;
-    private coreDistances: number[] = [];
 
     private clusters: Array<Array<number>>;
     private noise: Array<number>;
@@ -28,10 +25,7 @@ export class Hdbscan {
         this.alpha = alpha;
         this.metric = metric;
         
-        // Transform the space - calculate mutual reachability distance(core distance)
-        this.kdTree = new kdTree(this.input, this.metric, []);
-        this.coreDistances = this.input.map(p => this.kdTree.nearest(p, this.minSamples)[0][1]);
-        console.log("coreDistances: ", this.coreDistances);
+        kdTreePrim(input, minSamples, alpha, metric);
 
         this.clusters = [];
         this.noise = [];

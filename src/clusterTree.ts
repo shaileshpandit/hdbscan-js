@@ -366,3 +366,22 @@ export function labelClusters(
 
     return result;
 }
+
+export function getClustersAndNoise(labels: Array<number>) {
+    const clusters: Array<Array<number>> = [];
+    const noise: Array<number> = [];
+
+    for(var i = 0; i < labels.length; i++) {
+        const label = labels[i];
+        if(label === -1) {
+            noise.push(i);
+        } else {
+            if (!clusters[label]) {
+                clusters[label] = [];
+            }
+            clusters[label].push(i);
+        }
+    }
+
+    return {clusters, noise};
+}

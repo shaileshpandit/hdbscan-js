@@ -1,0 +1,1 @@
+export type MetricFunction = (a: Array<number>, b: Array<number>) => number;

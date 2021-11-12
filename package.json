@@ -1,10 +1,17 @@
 {
   "name": "hdbscan",
   "version": "0.0.1-alpha.1",
-  "description": "Hdbscan implementation in Javascript",
+  "description": "Hdbscan implementation in JavaScript",
   "main": "dist/index.js",
+  "jsnext:main": "dist/hdbscan.esm.js",
+  "module": "dist/hdbscan.esm.js",
+  "unpkg": "dist/hdbscan.min.js",
+  "jsdelivr": "dist/hdbscan.min.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rimraf dist && tsc",
+    "build-npm": "yarn build && rollup -c"
   },
   "keywords": [
     "HDBSCAN",
@@ -16,5 +23,16 @@
     "statistics"
   ],
   "author": "Shailesh Pandit <shailesh.pandit@gmail.com>",
-  "license": "GPL-3.0"
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "@tsconfig/recommended": "^1.0.1",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.59.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-typescript2": "^0.30.0",
+    "rollup-plugin-uglify": "^6.0.4",
+    "typescript": "^4.4.4"
+  }
 }

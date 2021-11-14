@@ -28,10 +28,9 @@ export function buildSingleLinkage(
     var sortedMst = mst;
     if(!sorted) {
         sortedMst = sortMst(mst);
-        console.log("sortedMst: ", sortedMst);
     }
 
     const singleLinkage = createSingleLinkage(sortedMst);
 
-    return singleLinkage;
+    return {sortedMst, singleLinkage};
 }

@@ -1,7 +1,8 @@
 import { computeStabilities, condenseTree, getClusterNodes, getClustersAndNoise, labelClusters } from "./clusterTree";
 import kdTreePrim from "./kdTreePrim";
 import { euclidean } from "./metrics";
-import { MetricFunction } from "./types";
+import { DebugInfo, MetricFunction, HdbscanInput } from "./types";
+import { mstToBinaryTree } from "./mst";
 
 export class Hdbscan {
     private input: Array<Array<number>>;
@@ -9,48 +10,89 @@ export class Hdbscan {
     private minSamples: number;
     private alpha: number;
     private metric: MetricFunction;
+    private debug: boolean;
 
+    private debugInfo?: DebugInfo;
     private clusters: Array<Array<number>>;
     private noise: Array<number>;
 
-    constructor(
-        input: Array<Array<number>>,
-        minClusterSize: number = 5,
-        minSamples: number = 5,
-        alpha: number = 1.0,
-        metric: MetricFunction = euclidean
-    ) {
+    constructor({
+        input,
+        minClusterSize = 5,
+        minSamples = 5,
+        alpha = 1.0,
+        metric = euclidean,
+        debug = false
+    }: HdbscanInput) {
         this.input = input;
         this.minClusterSize = minClusterSize;
         this.minSamples = minSamples;
         this.alpha = alpha;
         this.metric = metric;
+        this.debug = debug;
 
-        // Build the cluster hierarchy using kdTree and Prim
-        const singleLinkage = kdTreePrim(this.input, this.minSamples, this.alpha, this.metric);
+        let debugInfo;
 
-        // Condense the cluster tree
-        const condensedTree = condenseTree(singleLinkage, this.minClusterSize);
-        console.log('condensedTree: ', condensedTree);
+        try {
+            // Build the cluster hierarchy using kdTree and Prim
+            const { coreDistances, mst, sortedMst, singleLinkage } = kdTreePrim(this.input, this.minSamples, this.alpha, this.metric);
 
-        // Compute stabilities of condensed clusters
-        const stabilityDict = computeStabilities(condensedTree);
-        console.log('stabilityDict: ', stabilityDict);
+            if (this.debug) {
+                const mstBinaryTree = mstToBinaryTree(sortedMst);
+                debugInfo = { coreDistances, mst, sortedMst, mstBinaryTree, singleLinkage };
+            }
 
-        // Extract the clusters
-        const { clusterNodes, clusterNodesMap, revClusterNodesMap } = getClusterNodes(condensedTree, stabilityDict);
-        console.log('clusterNodes: ', clusterNodes, 'clusterNodesMap: ', clusterNodesMap, 'revClusterNodesMap: ', revClusterNodesMap);
+            // Condense the cluster tree
+            const { bfsNodes, condensedTree } = condenseTree(singleLinkage, this.minClusterSize);
 
-        // Label the inputs
-        const labeledInputs = labelClusters(condensedTree, clusterNodes, clusterNodesMap);
-        console.log('labeledInputs: ', labeledInputs);
+            if (this.debug) {
+                debugInfo = { ...debugInfo, bfsNodes, condensedTree }
+            }
 
-        // Get array of clusters and noise from labels
-        const {clusters, noise} = getClustersAndNoise(labeledInputs);
-        console.log({clusters, noise});
+            // Compute stabilities of condensed clusters
+            const stabilityDict = computeStabilities(condensedTree);
 
-        this.clusters = clusters;
-        this.noise = noise;
+            if (this.debug) {
+                debugInfo = { ...debugInfo, condensedTree }
+            }
+
+            // Extract the clusters
+            const { clusterNodes, clusterNodesMap, revClusterNodesMap, clusterTree } = getClusterNodes(condensedTree, stabilityDict);
+
+            if (this.debug) {
+                debugInfo = { ...debugInfo, clusterNodes, clusterNodesMap, revClusterNodesMap, clusterTree };
+            }
+
+            // Label the inputs
+            const labeledInputs = labelClusters(condensedTree, clusterNodes, clusterNodesMap);
+
+            if (this.debug) {
+                debugInfo = { ...debugInfo, labeledInputs };
+            }
+
+            // Get array of clusters and noise from labels
+            const { clusters, noise } = getClustersAndNoise(labeledInputs);
+
+            if (this.debug) {
+                debugInfo = { ...debugInfo, clusters, noise };
+                console.debug('debugInfo: ', debugInfo);
+            }
+
+            this.debugInfo = debugInfo;
+            this.clusters = clusters;
+            this.noise = noise;
+
+        } catch (e) {
+            if (this.debug) {
+                console.debug('debugInfo: ', debugInfo);
+                console.error('Error: Hdbscan: ', e);
+            }
+            throw e;
+        }
+    }
+
+    public getDebugInfo() {
+        return this.debugInfo;
     }
 
     public getClusters() {

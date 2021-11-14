@@ -38,13 +38,12 @@ export function condenseTree(
 
     var relabel = new Array<number>(root + 1).fill(0);
     relabel[root] = numPoints;
-    var resultList: SingleLinkage = [];
+    var condensedTree: SingleLinkage = [];
 
-    const nodeList = bfsFromHierarchy(hierarchy, root);
-    console.log("bfs: ", nodeList.length, nodeList);
+    const bfsNodes = bfsFromHierarchy(hierarchy, root);
 
-    const ignore: boolean[] = new Array(nodeList.length).fill(false);
-    for (const node of nodeList) {
+    const ignore: boolean[] = new Array(bfsNodes.length).fill(false);
+    for (const node of bfsNodes) {
         if (ignore[node] || node < numPoints) {
             continue;
         }
@@ -73,22 +72,22 @@ export function condenseTree(
         if (leftCount >= minClusterSize && rightCount >= minClusterSize) {
             relabel[left] = nextLabel;
             nextLabel += 1;
-            resultList.push(new HierarchyNode(relabel[node], relabel[left], lambdaValue, leftCount));
+            condensedTree.push(new HierarchyNode(relabel[node], relabel[left], lambdaValue, leftCount));
 
             relabel[right] = nextLabel;
             nextLabel += 1;
-            resultList.push(new HierarchyNode(relabel[node], relabel[right], lambdaValue, rightCount))
+            condensedTree.push(new HierarchyNode(relabel[node], relabel[right], lambdaValue, rightCount))
         } else if (leftCount < minClusterSize && rightCount < minClusterSize) {
             for (const subNode of bfsFromHierarchy(hierarchy, left)) {
                 if (subNode < numPoints) {
-                    resultList.push(new HierarchyNode(relabel[node], subNode, lambdaValue, 1));
+                    condensedTree.push(new HierarchyNode(relabel[node], subNode, lambdaValue, 1));
                 }
                 ignore[subNode] = true;
             }
 
             for (const subNode of bfsFromHierarchy(hierarchy, right)) {
                 if (subNode < numPoints) {
-                    resultList.push(new HierarchyNode(relabel[node], subNode, lambdaValue, 1));
+                    condensedTree.push(new HierarchyNode(relabel[node], subNode, lambdaValue, 1));
                 }
                 ignore[subNode] = true;
             }
@@ -96,7 +95,7 @@ export function condenseTree(
             relabel[right] = relabel[node];
             for (const subNode of bfsFromHierarchy(hierarchy, left)) {
                 if (subNode < numPoints) {
-                    resultList.push(new HierarchyNode(relabel[node], subNode, lambdaValue, 1));
+                    condensedTree.push(new HierarchyNode(relabel[node], subNode, lambdaValue, 1));
                 }
                 ignore[subNode] = true;
             }
@@ -104,14 +103,14 @@ export function condenseTree(
             relabel[left] = relabel[node];
             for (const subNode of bfsFromHierarchy(hierarchy, right)) {
                 if (subNode < numPoints) {
-                    resultList.push(new HierarchyNode(relabel[node], subNode, lambdaValue, 1));
+                    condensedTree.push(new HierarchyNode(relabel[node], subNode, lambdaValue, 1));
                 }
                 ignore[subNode] = true;
             }
         }
     }
 
-    return resultList;
+    return { bfsNodes, condensedTree };
 }
 
 export function computeStabilities(
@@ -242,20 +241,14 @@ export function getClusterNodes(
     const clusterSizes = new Map<number, number>();
     clusterTree.forEach(t => clusterSizes.set(t.child, t.size));
 
-    console.log('getClusters: ', isCluster, numPoints, maxLambda, clusterSizes);
-    console.log('nodeList: ', nodeList);
-    console.log('clusterTree: ', clusterTree);
-
     // return getClustersUsingEOM(nodeList, clusterTree, stability, isCluster, clusterSizes);
     for (const node of nodeList) {
         const childSelection = clusterTree
             .filter(c => c.parent === node)
             .map(c => c.child);
-        console.log('childSelection: ', node, childSelection);
         const subtreeStability = childSelection
             .map(cs => stability.get(cs) || 0)
             .reduce((r, n) => r + n, 0);
-        console.log('subtreeStability: ', node, subtreeStability, stability.get(node), clusterSizes.get(node), maxClusterSize);
         if (subtreeStability > (stability.get(node) || 0) || (clusterSizes.get(node) || 0) > maxClusterSize) {
             isCluster.set(node, false);
             stability.set(node, subtreeStability);
@@ -268,8 +261,6 @@ export function getClusterNodes(
         }
     }
 
-    console.log('isCluster: ', isCluster, stability);
-
     const clusterNodes = [...isCluster.entries()].filter(e => e[1]).map(e => e[0]).sort();
     const clusterNodesMap = new Map<number, number>();
     const revClusterNodesMap = new Map<number, number>();
@@ -278,7 +269,7 @@ export function getClusterNodes(
         revClusterNodesMap.set(i, clusterNodes[i]);
     }
 
-    return { clusterNodes, clusterNodesMap, revClusterNodesMap };
+    return { clusterNodes, clusterNodesMap, revClusterNodesMap, clusterTree };
 }
 
 export function labelClusters(
@@ -287,7 +278,7 @@ export function labelClusters(
     clusterLabelMap: Map<number, number>,
     allowSingleCluster: boolean = false,
     clusterSelectionEpsilon: number = 0.0,
-    matchReferenceImplementation: boolean = false) {
+    matchReferenceImplementation: boolean = false): Array<number> {
 
     if (clusterSelectionEpsilon !== 0.0) {
         throw Error('epsilon selection is not supported now.');
@@ -308,8 +299,6 @@ export function labelClusters(
     const maxParent = Math.max(...parentArray);
     const unionFind = new TreeUnionFind(maxParent + 1);
 
-    console.log('rootCluster: ', rootCluster);
-
     for (var n = 0; n < condensedTree.length; n++) {
         const child = childArray[n]
         const parent = parentArray[n];
@@ -317,8 +306,6 @@ export function labelClusters(
             unionFind.union(parent, child);
         }
     }
-
-    console.log('unionFind: ', unionFind.components());
 
     for (var n = 0; n < rootCluster; n++) {
         const cluster = unionFind.find(n);
@@ -371,9 +358,9 @@ export function getClustersAndNoise(labels: Array<number>) {
     const clusters: Array<Array<number>> = [];
     const noise: Array<number> = [];
 
-    for(var i = 0; i < labels.length; i++) {
+    for (var i = 0; i < labels.length; i++) {
         const label = labels[i];
-        if(label === -1) {
+        if (label === -1) {
             noise.push(i);
         } else {
             if (!clusters[label]) {
@@ -383,5 +370,5 @@ export function getClustersAndNoise(labels: Array<number>) {
         }
     }
 
-    return {clusters, noise};
+    return { clusters, noise };
 }

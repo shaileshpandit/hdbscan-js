@@ -15,7 +15,7 @@ function config({ plugins = [], output = {} }) {
     ],
     output: {
       globals: {
-        'kd-tree-javascript': 'kdTreeJS'
+        'kd-tree-javascript': 'globalThis'
       },
       ...output,
     },

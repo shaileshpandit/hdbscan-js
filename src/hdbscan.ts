@@ -20,6 +20,8 @@ export class Hdbscan {
         input,
         minClusterSize = 5,
         minSamples = 5,
+        clusterSelectionEpsilon = 0.0,
+        clusterSelectionMethod = "eom",
         alpha = 1.0,
         metric = euclidean,
         debug = false
@@ -57,14 +59,19 @@ export class Hdbscan {
             }
 
             // Extract the clusters
-            const { clusterNodes, clusterNodesMap, revClusterNodesMap, clusterTree } = getClusterNodes(condensedTree, stabilityDict);
+            const { clusterNodes, clusterNodesMap, revClusterNodesMap, clusterTree } = getClusterNodes(
+                condensedTree,
+                stabilityDict,
+                clusterSelectionEpsilon,
+                clusterSelectionMethod
+            );
 
             if (this.debug) {
                 debugInfo = { ...debugInfo, clusterNodes, clusterNodesMap, revClusterNodesMap, clusterTree };
             }
 
             // Label the inputs
-            const labeledInputs = labelClusters(condensedTree, clusterNodes, clusterNodesMap);
+            const labeledInputs = labelClusters(condensedTree, clusterNodes, clusterNodesMap, clusterSelectionEpsilon);
 
             if (this.debug) {
                 debugInfo = { ...debugInfo, labeledInputs };

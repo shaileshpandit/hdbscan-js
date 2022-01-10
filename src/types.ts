@@ -31,6 +31,8 @@ export interface HdbscanInput {
     input: Array<Array<number>>;
     minClusterSize?: number;
     minSamples?: number;
+    clusterSelectionEpsilon?: number;
+    clusterSelectionMethod?: string;
     alpha?: number;
     metric?: MetricFunction;
     debug?: boolean;

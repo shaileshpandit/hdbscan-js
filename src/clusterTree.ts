@@ -1,28 +1,7 @@
+import { bfsFromHierarchy } from "./traversals";
+import { selectClustersUsingEOM, selectClustersUsingLEAF } from "./clusterSelection";
 import { HierarchyNode, SingleLinkage, StabilityDict } from "./types";
 import { TreeUnionFind } from "./unionFind";
-
-export function bfsFromHierarchy(
-    hierarchy: SingleLinkage,
-    root: number
-) {
-    const dim = hierarchy.length;
-    const maxNode = 2 * dim;
-    const numPoints = maxNode - dim + 1;
-    var toProcess = [root]
-    let result: number[] = [];
-
-    while (toProcess.length) {
-        result = result.concat(toProcess);
-        toProcess = toProcess
-            .filter(x => x >= numPoints)
-            .map(x => x - numPoints)
-        if (toProcess.length) {
-            toProcess = toProcess.map(t => [hierarchy[t].parent, hierarchy[t].child]).flat();
-        }
-    }
-
-    return result;
-}
 
 export function condenseTree(
     hierarchy: SingleLinkage,
@@ -186,34 +165,14 @@ export function computeStabilities(
     return resultDict;
 }
 
-export function bfsFromClusterTree(tree: SingleLinkage, bfsRoot: number) {
-    var toProcess = [bfsRoot];
-    let result: Array<number> = [];
-
-    while (toProcess.length) {
-        result = result.concat(toProcess);
-        toProcess = tree
-            .filter(t => toProcess.indexOf(t.parent) !== -1)
-            .map(t => t.child);
-    }
-
-    return result;
-}
-
 export function getClusterNodes(
     condensedTree: SingleLinkage,
     stability: StabilityDict,
+    clusterSelectionEpsilon = 0.0,
     clusterSelectionMethod = "eom",
     allowSingleCluster = false,
-    clusterSelectionEpsilon = 0.0,
-    maxClusterSize = 0) {
-
-    if (clusterSelectionMethod !== "eom") {
-        throw Error('Only eom method is supported now.');
-    }
-    if (clusterSelectionEpsilon !== 0.0) {
-        throw Error('epsilon selection is not supported now.');
-    }
+    maxClusterSize = 0
+) {
     if (allowSingleCluster) {
         throw Error('singleCluster is not supported now.');
     }
@@ -238,27 +197,13 @@ export function getClusterNodes(
         maxClusterSize = numPoints + 1
     }
 
-    const clusterSizes = new Map<number, number>();
-    clusterTree.forEach(t => clusterSizes.set(t.child, t.size));
-
-    // return getClustersUsingEOM(nodeList, clusterTree, stability, isCluster, clusterSizes);
-    for (const node of nodeList) {
-        const childSelection = clusterTree
-            .filter(c => c.parent === node)
-            .map(c => c.child);
-        const subtreeStability = childSelection
-            .map(cs => stability.get(cs) || 0)
-            .reduce((r, n) => r + n, 0);
-        if (subtreeStability > (stability.get(node) || 0) || (clusterSizes.get(node) || 0) > maxClusterSize) {
-            isCluster.set(node, false);
-            stability.set(node, subtreeStability);
-        } else {
-            for (const subNode of bfsFromClusterTree(clusterTree, node)) {
-                if (subNode !== node) {
-                    isCluster.set(subNode, false);
-                }
-            }
-        }
+    if (clusterSelectionMethod === "eom") {
+        selectClustersUsingEOM(clusterTree, stability, nodeList, isCluster,
+            clusterSelectionEpsilon, allowSingleCluster, maxClusterSize);
+    } else if (clusterSelectionMethod === "leaf") {
+        selectClustersUsingLEAF(clusterTree, isCluster, clusterSelectionEpsilon, allowSingleCluster);
+    } else {
+        throw Error('Unknown cluster selection method');
     }
 
     const clusterNodes = [...isCluster.entries()].filter(e => e[1]).map(e => e[0]).sort();
@@ -276,13 +221,10 @@ export function labelClusters(
     condensedTree: SingleLinkage,
     clusterNodes: number[],
     clusterLabelMap: Map<number, number>,
-    allowSingleCluster: boolean = false,
     clusterSelectionEpsilon: number = 0.0,
-    matchReferenceImplementation: boolean = false): Array<number> {
-
-    if (clusterSelectionEpsilon !== 0.0) {
-        throw Error('epsilon selection is not supported now.');
-    }
+    allowSingleCluster: boolean = false,
+    matchReferenceImplementation: boolean = false
+): Array<number> {
     if (allowSingleCluster) {
         throw Error('singleCluster is not supported now.');
     }
@@ -290,6 +232,7 @@ export function labelClusters(
         throw Error('matchReferenceImplementation is not supported now.');
     }
 
+    // parent_array = tree['parent']
     const parentArray = condensedTree.map(c => c.parent);
     const childArray = condensedTree.map(c => c.child);
 
@@ -313,6 +256,7 @@ export function labelClusters(
             result[n] = -1
         } else if (cluster === rootCluster) {
             if (clusterNodes.length === 1 && allowSingleCluster) {
+                // tree['lambda_val'][tree['child'] == n]
                 const childMatch = condensedTree.find(t => t.child === n);
                 if (clusterSelectionEpsilon !== 0.0) {
                     if (childMatch && childMatch.lambda >= 1 / clusterSelectionEpsilon) {

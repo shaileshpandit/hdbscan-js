@@ -42,7 +42,6 @@ export class DebugInfo {
     public coreDistances?: Array<number>;
     public mst?: MST;
     public sortedMst?: MST;
-    public mstBinaryTree?: TreeNode<number>;
     public singleLinkage?: SingleLinkage;
     public bfsNodes?: Array<number>;
     public condensedTree?: SingleLinkage;

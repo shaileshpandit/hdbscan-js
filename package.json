@@ -1,6 +1,6 @@
 {
   "name": "hdbscan",
-  "version": "0.0.1-alpha.3",
+  "version": "0.0.1-alpha.4",
   "description": "Hdbscan implementation in JavaScript",
   "main": "dist/index.js",
   "jsnext:main": "dist/hdbscan.esm.js",

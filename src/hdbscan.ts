@@ -40,8 +40,7 @@ export class Hdbscan {
             const { coreDistances, mst, sortedMst, singleLinkage } = kdTreePrim(this.input, this.minSamples, this.alpha, this.metric);
 
             if (this.debug) {
-                const mstBinaryTree = mstToBinaryTree(sortedMst);
-                debugInfo = { coreDistances, mst, sortedMst, mstBinaryTree, singleLinkage };
+                debugInfo = { coreDistances, mst, sortedMst, singleLinkage };
             }
 
             // Condense the cluster tree

@@ -37,6 +37,7 @@ export function bfsFromClusterTree(tree: SingleLinkage, bfsRoot: number) {
     return result;
 }
 
+// TODO: convert recursive functions to loop based to avoid limits from stack size
 export function recurseLeafDFS(clusterTree: SingleLinkage, currentNode: number) {
     const children = clusterTree
         .filter(c => c.parent === currentNode)
